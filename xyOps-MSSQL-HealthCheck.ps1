@@ -4178,432 +4178,79 @@ MODIFY FILE (
     }
     
     # ============================================================================
-    # GENERATE COMPREHENSIVE HTML REPORT (SEQUENTIAL WRITE TO AVOID MEMORY ISSUES)
+    # GENERATE COMPREHENSIVE MARKDOWN REPORT
     # ============================================================================
     
-    Send-Progress -Value 0.92 -Message "Generating comprehensive HTML report..."
+    Send-Progress -Value 0.92 -Message "Generating comprehensive Markdown report..."
     
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $reportDate = Get-Date -Format "yyyyMMdd_HHmmss"
-    $filename = "SQLServer_HealthCheck_${reportDate}.html"
+    $filename = "SQLServer_HealthCheck_${reportDate}.md"
     
     # Calculate overall health score
     $totalChecks = $healthCheckResults.ExecutiveSummary.TotalChecks
     $passedChecks = $healthCheckResults.ExecutiveSummary.PassedChecks
     $healthScore = if ($totalChecks -gt 0) { [math]::Round(($passedChecks / $totalChecks) * 100, 1) } else { 0 }
     
-    # Delete file if exists and create new
+    # Delete file if exists
     if (Test-Path $filename) { Remove-Item $filename -Force }
     
-    # Helper function to append to HTML file
-    function Add-ToHtmlReport {
+    # Helper function
+    function Add-ToReport {
         param([string]$Content)
-        Add-Content -Path $filename -Value $Content -Encoding UTF8 -NoNewline
+        Add-Content -Path $filename -Value $Content -Encoding UTF8
     }
     
-    # Write HTML header and styles (WRITE TO FILE IMMEDIATELY)
-    $htmlHeader = @"
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Server Health Check Report - $timestamp</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8f9fa;
-            padding: 20px;
-            line-height: 1.6;
-            color: #2c3e50;
-        }
-        .container { max-width: 1800px; margin: 0 auto; }
-        
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .header h1 {
-            font-size: 36px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        .header-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .header-meta-item {
-            background: rgba(255,255,255,0.15);
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-        .header-meta-item label {
-            display: block;
-            font-size: 12px;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .header-meta-item value {
-            display: block;
-            font-size: 20px;
-            font-weight: 600;
-        }
-        
-        /* Executive Dashboard */
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .dashboard-card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        .dashboard-card-value {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .dashboard-card-label {
-            font-size: 14px;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .score-excellent { color: #10b981; }
-        .score-good { color: #3b82f6; }
-        .score-warning { color: #f59e0b; }
-        .score-critical { color: #ef4444; }
-        
-        /* Server Section */
-        .server-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
-        .server-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #667eea;
-            margin-bottom: 30px;
-        }
-        .server-title {
-            font-size: 28px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .server-badge {
-            background: #667eea;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        
-        /* Check Card */
-        .check {
-            background: #f8f9fa;
-            border-left: 4px solid #dee2e6;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-        .check:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transform: translateX(5px);
-        }
-        .check.pass { border-left-color: #10b981; }
-        .check.warning { border-left-color: #f59e0b; }
-        .check.error { border-left-color: #ef4444; }
-        .check.info { border-left-color: #3b82f6; }
-        
-        .check-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-        .check-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .check-status {
-            font-size: 16px;
-            font-weight: 600;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: #e9ecef;
-        }
-        .check-status.pass { background: #d1fae5; color: #065f46; }
-        .check-status.warning { background: #fed7aa; color: #92400e; }
-        .check-status.error { background: #fee2e2; color: #991b1b; }
-        
-        .check-description {
-            color: #6c757d;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        
-        .check-impact {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 5px;
-        }
-        .check-impact strong {
-            color: #856404;
-        }
-        
-        .check-details {
-            display: none;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #dee2e6;
-        }
-        .check-details.expanded {
-            display: block;
-        }
-        
-        .detail-section {
-            margin-bottom: 25px;
-        }
-        .detail-section h4 {
-            font-size: 16px;
-            color: #495057;
-            margin-bottom: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .code-block {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 20px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            margin-top: 10px;
-        }
-        .code-block pre {
-            margin: 0;
-        }
-        
-        .doc-links {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .doc-link {
-            color: #667eea;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-        }
-        .doc-link:hover {
-            text-decoration: underline;
-        }
-        
-        .raw-data {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        /* Collapsible Toggle */
-        .toggle-icon {
-            transition: transform 0.3s ease;
-        }
-        .toggle-icon.expanded {
-            transform: rotate(90deg);
-        }
-        
-        /* AG Section */
-        .ag-section {
-            background: linear-gradient(135deg, #e0e7ff 0%, #fce7f3 100%);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-        }
-        .ag-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #4c1d95;
-        }
-        .ag-replica {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 30px;
-            color: #6c757d;
-            font-size: 14px;
-        }
-        
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #dee2e6;
-        }
-        .tab {
-            padding: 12px 24px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 16px;
-            font-weight: 500;
-            color: #6c757d;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .tab:hover {
-            color: #667eea;
-        }
-        .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        
-        @media print {
-            body { background: white; }
-            .check-details { display: block !important; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🏥 SQL Server Comprehensive Health Check Report</h1>
-            <div class="header-meta">
-                <div class="header-meta-item">
-                    <label>Report Date</label>
-                    <value>$timestamp</value>
-                </div>
-                <div class="header-meta-item">
-                    <label>Primary Server</label>
-                    <value>$($healthCheckResults.PrimaryServer)</value>
-                </div>
-                <div class="header-meta-item">
-                    <label>Servers Analyzed</label>
-                    <value>$($healthCheckResults.ExecutiveSummary.TotalServers)</value>
-                </div>
-                <div class="header-meta-item">
-                    <label>AG Environment</label>
-                    <value>$(if($healthCheckResults.IsAGEnvironment){'Yes'}else{'No'})</value>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Executive Dashboard -->
-        <div class="dashboard">
-            <div class="dashboard-card">
-                <div class="dashboard-card-value $(if($healthScore -ge 90){'score-excellent'}elseif($healthScore -ge 75){'score-good'}elseif($healthScore -ge 60){'score-warning'}else{'score-critical'})">
-                    $healthScore%
-                </div>
-                <div class="dashboard-card-label">Overall Health Score</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="dashboard-card-value score-excellent">$($healthCheckResults.ExecutiveSummary.PassedChecks)</div>
-                <div class="dashboard-card-label">Checks Passed</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="dashboard-card-value score-warning">$($healthCheckResults.ExecutiveSummary.WarningChecks)</div>
-                <div class="dashboard-card-label">Warnings</div>
-            </div>
-            <div class="dashboard-card">
-                <div class="dashboard-card-value score-critical">$($healthCheckResults.ExecutiveSummary.FailedChecks)</div>
-                <div class="dashboard-card-label">Failed Checks</div>
-            </div>
-        </div>
-"@
-    # Write header and dashboard to file
-    Add-ToHtmlReport $htmlHeader
+    # Header
+    Add-ToReport "# SQL Server Comprehensive Health Check Report"
+    Add-ToReport "="*60
+    Add-ToReport ""
+    Add-ToReport "**Report Date:** $timestamp"
+    Add-ToReport "**Primary Server:** $($healthCheckResults.PrimaryServer)"
+    Add-ToReport "**Servers Analyzed:** $($healthCheckResults.ExecutiveSummary.TotalServers)"
+    Add-ToReport "**AG Environment:** $(if($healthCheckResults.IsAGEnvironment){'Yes'}else{'No'})"
+    Add-ToReport ""
+    Add-ToReport "---"
+    Add-ToReport ""
     
-    # Add AG Section if applicable (WRITE IMMEDIATELY)
+    # Executive Dashboard
+    Add-ToReport "## Executive Dashboard"
+    Add-ToReport "-"*30
+    Add-ToReport ""
+    Add-ToReport "| Metric                    | Value |"
+    Add-ToReport "|---------------------------|-------|"
+    Add-ToReport "| **Overall Health Score**  | **${healthScore}%** |"
+    Add-ToReport "| Checks Passed             | $($healthCheckResults.ExecutiveSummary.PassedChecks) |"
+    Add-ToReport "| Warnings                  | $($healthCheckResults.ExecutiveSummary.WarningChecks) |"
+    Add-ToReport "| Failed                    | $($healthCheckResults.ExecutiveSummary.FailedChecks) |"
+    Add-ToReport "| Total Checks              | $($healthCheckResults.ExecutiveSummary.TotalChecks) |"
+    Add-ToReport ""
+    Add-ToReport "---"
+    Add-ToReport ""
+    
+    # AG Section
     if ($healthCheckResults.IsAGEnvironment) {
         Send-Progress -Value 0.93 -Message "Writing Availability Group information..."
-        Add-ToHtmlReport @"
+        Add-ToReport "## Availability Groups Configuration"
+        Add-ToReport "-"*30
+        Add-ToReport ""
         
-        <!-- Availability Groups -->
-        <div class="ag-section">
-            <div class="ag-title">🔄 Availability Groups Configuration</div>
-"@
         foreach ($ag in $healthCheckResults.AvailabilityGroups) {
-            Add-ToHtmlReport @"
-            <div class="ag-replica">
-                <h3>$($ag.Name)</h3>
-                <p><strong>Primary Replica:</strong> $($ag.PrimaryReplica)</p>
-                <p><strong>Backup Preference:</strong> $($ag.AutomatedBackupPreference)</p>
-                <p><strong>Replicas:</strong></p>
-                <ul>
-"@
+            Add-ToReport "### $($ag.Name)"
+            Add-ToReport ""
+            Add-ToReport "- **Primary Replica:** $($ag.PrimaryReplica)"
+            Add-ToReport "- **Backup Preference:** $($ag.AutomatedBackupPreference)"
+            Add-ToReport "- **Replicas:**"
             foreach ($replica in $ag.Replicas) {
-                Add-ToHtmlReport "<li><strong>$($replica.Name)</strong> - Role: $($replica.Role), Mode: $($replica.AvailabilityMode), Failover: $($replica.FailoverMode)</li>"
+                Add-ToReport "  - **$($replica.Name)**: Role=$($replica.Role), Mode=$($replica.AvailabilityMode), Failover=$($replica.FailoverMode)"
             }
-            Add-ToHtmlReport @"
-                </ul>
-            </div>
-"@
+            Add-ToReport ""
         }
-        Add-ToHtmlReport "</div>"
+        Add-ToReport "---"
+        Add-ToReport ""
     }
     
-    # Add server sections (WRITE SEQUENTIALLY)
+    # Server sections
     $serverCount = 0
     $totalServers = $healthCheckResults.Servers.Keys.Count
     foreach ($serverName in $healthCheckResults.Servers.Keys) {
@@ -4614,146 +4261,175 @@ MODIFY FILE (
         $serverData = $healthCheckResults.Servers[$serverName]
         $serverInfo = $serverData.ServerInfo
         
-        Add-ToHtmlReport @"
+        Add-ToReport "## Server: $serverName"
+        Add-ToReport "-"*30
+        Add-ToReport ""
+        Add-ToReport "**Edition:** $($serverInfo.Edition)"
+        Add-ToReport "**Version:** $($serverInfo.Version)"
+        Add-ToReport "**Build:** $($serverInfo.BuildNumber)"
+        Add-ToReport "**Patch Level:** $($serverInfo.ProductUpdateLevel)"
+        Add-ToReport "**Memory:** $($serverInfo.PhysicalMemoryMB) MB"
+        Add-ToReport "**Processors:** $($serverInfo.Processors)"
+        Add-ToReport "**Collation:** $($serverInfo.Collation)"
+        Add-ToReport ""
+        Add-ToReport "---"
+        Add-ToReport ""
         
-        <!-- Server: $serverName -->
-        <div class="server-section">
-            <div class="server-header">
-                <div class="server-title">🖥️ $serverName</div>
-                <div class="server-badge">$($serverInfo.Edition)</div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                <div><strong>Version:</strong> $($serverInfo.Version)</div>
-                <div><strong>Build:</strong> $($serverInfo.BuildNumber)</div>
-                <div><strong>Patch Level:</strong> $($serverInfo.ProductUpdateLevel)</div>
-                <div><strong>Memory:</strong> $($serverInfo.PhysicalMemoryMB) MB</div>
-                <div><strong>Processors:</strong> $($serverInfo.Processors)</div>
-                <div><strong>Collation:</strong> $($serverInfo.Collation)</div>
-            </div>
-            
-            <!-- Checks -->
-"@
-        
-        # Add each check (WRITE IMMEDIATELY)
+        # Checks
+        $checkNumber = 0
+        $totalServerChecks = $serverData.Checks.Count
         foreach ($check in $serverData.Checks) {
-            $severityClass = switch ($check.Severity) {
-                "Pass" { "pass" }
-                "Warning" { "warning" }
-                "Error" { "error" }
-                default { "info" }
+            $checkNumber++
+            
+            Add-ToReport ""
+            Add-ToReport ""
+            Add-ToReport "### Check ${checkNumber}/${totalServerChecks}: $($check.CheckName)"
+            Add-ToReport "---"
+            Add-ToReport ""
+            Add-ToReport "**Status:** $($check.Status)"
+            Add-ToReport "**Category:** $($check.Category)"
+            Add-ToReport ""
+            Add-ToReport "**Description:** $($check.Description)"
+            Add-ToReport ""
+            
+            if ($check.Impact) {
+                $impactClean = $check.Impact -replace "`n", " " -replace "`r", ""
+                Add-ToReport "**Impact:** $impactClean"
+                Add-ToReport ""
             }
             
-            $checkId = "check_$($serverName.Replace('\\','_'))_$($check.CheckName.Replace(' ','_'))"
-            
-            Add-ToHtmlReport @"
-            <div class="check $severityClass">
-                <div class="check-header" onclick="toggleCheck('$checkId')">
-                    <div class="check-title">
-                        <span class="toggle-icon" id="${checkId}_icon">▶</span>
-                        $($check.CheckName)
-                    </div>
-                    <div class="check-status $severityClass">$($check.Status)</div>
-                </div>
-                <div class="check-description">$($check.Description)</div>
-                $(if ($check.Impact) { "<div class='check-impact'><strong>Impact:</strong> $($check.Impact)</div>" })
-                <div class="check-details" id="$checkId">
-"@
-            
-            # Current Value
             if ($check.CurrentValue) {
-                Add-ToHtmlReport "<div class='detail-section'><h4>📊 Current Configuration</h4><div class='raw-data'>"
+                Add-ToReport "**Current Configuration:**"
                 foreach ($key in $check.CurrentValue.Keys) {
-                    Add-ToHtmlReport "<strong>$key</strong>: $($check.CurrentValue[$key])<br>"
+                    $value = if ($check.CurrentValue[$key] -ne $null) { $check.CurrentValue[$key] } else { "(null)" }
+                    Add-ToReport "- **${key}:** $value"
                 }
-                Add-ToHtmlReport "</div></div>"
+                Add-ToReport ""
             }
             
-            # Recommended Action
+            # Display detailed list of problematic items RIGHT AFTER current config
+            if ($check.RawData) {
+                try {
+                    Add-ToReport "**Affected Items:**"
+                    Add-ToReport ""
+                    
+                    # Convert to array if it's a single object
+                    $dataItems = @($check.RawData)
+                    
+                    if ($dataItems.Count -gt 0 -and $dataItems.Count -le 100) {
+                        # Get properties from first item to create table header
+                        $firstItem = $dataItems[0]
+                        $properties = $firstItem.PSObject.Properties.Name
+                        
+                        # Create markdown table
+                        $headerRow = "| " + ($properties -join " | ") + " |"
+                        $separatorRow = "|" + (($properties | ForEach-Object { "---" }) -join "|") + "|"
+                        
+                        Add-ToReport $headerRow
+                        Add-ToReport $separatorRow
+                        
+                        # Add data rows
+                        foreach ($item in $dataItems) {
+                            $values = @()
+                            foreach ($prop in $properties) {
+                                $val = $item.$prop
+                                if ($null -eq $val) { $val = "" }
+                                $values += $val
+                            }
+                            $dataRow = "| " + ($values -join " | ") + " |"
+                            Add-ToReport $dataRow
+                        }
+                    } elseif ($dataItems.Count -gt 100) {
+                        Add-ToReport "*Too many items to display ($($dataItems.Count) items). Showing first 100:*"
+                        Add-ToReport ""
+                        
+                        # Show first 100 items
+                        $firstItem = $dataItems[0]
+                        $properties = $firstItem.PSObject.Properties.Name
+                        
+                        $headerRow = "| " + ($properties -join " | ") + " |"
+                        $separatorRow = "|" + (($properties | ForEach-Object { "---" }) -join "|") + "|"
+                        
+                        Add-ToReport $headerRow
+                        Add-ToReport $separatorRow
+                        
+                        foreach ($item in $dataItems[0..99]) {
+                            $values = @()
+                            foreach ($prop in $properties) {
+                                $val = $item.$prop
+                                if ($null -eq $val) { $val = "" }
+                                $values += $val
+                            }
+                            $dataRow = "| " + ($values -join " | ") + " |"
+                            Add-ToReport $dataRow
+                        }
+                    }
+                    Add-ToReport ""
+                } catch {
+                    # If table formatting fails, just skip
+                }
+            }
+            
             if ($check.RecommendedAction) {
-                Add-ToHtmlReport "<div class='detail-section'><h4>✅ Recommended Action</h4><p>$($check.RecommendedAction)</p></div>"
+                Add-ToReport "**Recommended Action:** $($check.RecommendedAction)"
+                Add-ToReport ""
             }
             
-            # Remediation Steps
             if ($check.RemediationSteps) {
-                Add-ToHtmlReport "<div class='detail-section'><h4>🔧 Remediation Steps</h4>"
+                Add-ToReport "**Remediation Steps:**"
+                Add-ToReport ""
                 
                 if ($check.RemediationSteps.PowerShell) {
-                    Add-ToHtmlReport "<h5 style='margin: 15px 0 5px 0;'>PowerShell:</h5><div class='code-block'><pre>$([System.Web.HttpUtility]::HtmlEncode($check.RemediationSteps.PowerShell))</pre></div>"
+                    Add-ToReport "**PowerShell:**"
+                    Add-ToReport '```powershell'
+                    Add-ToReport $check.RemediationSteps.PowerShell
+                    Add-ToReport '```'
+                    Add-ToReport ""
                 }
                 if ($check.RemediationSteps.TSQL) {
-                    Add-ToHtmlReport "<h5 style='margin: 15px 0 5px 0;'>T-SQL:</h5><div class='code-block'><pre>$([System.Web.HttpUtility]::HtmlEncode($check.RemediationSteps.TSQL))</pre></div>"
+                    Add-ToReport "**T-SQL:**"
+                    Add-ToReport '```sql'
+                    Add-ToReport $check.RemediationSteps.TSQL
+                    Add-ToReport '```'
+                    Add-ToReport ""
                 }
                 if ($check.RemediationSteps.Manual) {
-                    Add-ToHtmlReport "<h5 style='margin: 15px 0 5px 0;'>Manual Steps:</h5><div class='code-block'><pre>$([System.Web.HttpUtility]::HtmlEncode($check.RemediationSteps.Manual))</pre></div>"
+                    Add-ToReport "**Manual Steps:**"
+                    Add-ToReport '```'
+                    Add-ToReport $check.RemediationSteps.Manual
+                    Add-ToReport '```'
+                    Add-ToReport ""
                 }
-                Add-ToHtmlReport "</div>"
             }
             
-            # Documentation
             if ($check.Documentation) {
-                Add-ToHtmlReport "<div class='detail-section'><h4>📚 Documentation</h4><div class='doc-links'>"
+                Add-ToReport "**Documentation:**"
                 foreach ($link in $check.Documentation) {
-                    Add-ToHtmlReport "<a href='$link' class='doc-link' target='_blank'>📖 $link</a>"
+                    Add-ToReport "- $link"
                 }
-                Add-ToHtmlReport "</div></div>"
+                Add-ToReport ""
             }
             
-            # Raw Data (omit if too large to avoid timeouts)
-            if ($check.RawData) {
-                Add-ToHtmlReport "<div class='detail-section'><h4>🔍 Raw Data</h4><div class='raw-data'>"
-                try {
-                    $rawDataJson = $check.RawData | ConvertTo-Json -Depth 100 -Compress:$false -WarningAction SilentlyContinue
-                    if ($rawDataJson -and $rawDataJson.Length -lt 50000) {
-                        Add-ToHtmlReport "<pre>$([System.Web.HttpUtility]::HtmlEncode($rawDataJson))</pre>"
-                    } else {
-                        Add-ToHtmlReport "<pre>Raw data too large to display (use PowerShell to query directly)</pre>"
-                    }
-                } catch {
-                    Add-ToHtmlReport "<pre>Raw data could not be serialized</pre>"
-                }
-                Add-ToHtmlReport "</div></div>"
-            }
-            
-            Add-ToHtmlReport @"
-                </div>
-            </div>
-"@
+            Add-ToReport "---"
+            Add-ToReport ""
         }
-        
-        Add-ToHtmlReport "</div>"
     }
     
-    # Footer (WRITE FINAL SECTIONS)
-    Send-Progress -Value 0.97 -Message "Finalizing HTML report..."
-    Add-ToHtmlReport @"
-        
-        <div class="footer">
-            <p><strong>SQL Server Health Check Report</strong></p>
-            <p>Generated by xyOps MSSQL Health Check Plugin | © 2026 Tim Alderweireldt</p>
-            <p>Report Date: $timestamp</p>
-        </div>
-    </div>
+    # Footer
+    Send-Progress -Value 0.97 -Message "Finalizing Markdown report..."
+    Add-ToReport ""
+    Add-ToReport "---"
+    Add-ToReport ""
+    Add-ToReport "## Report Information"
+    Add-ToReport "-"*30
+    Add-ToReport ""
+    Add-ToReport "**SQL Server Health Check Report**"
+    Add-ToReport "Generated by xyOps MSSQL Health Check Plugin"
+    Add-ToReport "Copyright 2026 Tim Alderweireldt"
+    Add-ToReport "Report Date: $timestamp"
     
-    <script>
-        function toggleCheck(checkId) {
-            const details = document.getElementById(checkId);
-            const icon = document.getElementById(checkId + '_icon');
-            
-            if (details.classList.contains('expanded')) {
-                details.classList.remove('expanded');
-                icon.classList.remove('expanded');
-            } else {
-                details.classList.add('expanded');
-                icon.classList.add('expanded');
-            }
-        }
-    </script>
-</body>
-</html>
-"@
-    
-    Write-Host "`n✓ HTML report saved: $filename"
+    Write-Host ""
+    Write-Host "Markdown report saved: $filename"
     
     # Output file reference to xyOps
     Send-Progress -Value 0.98 -Message "Finalizing report..."
@@ -4770,12 +4446,12 @@ MODIFY FILE (
     Send-Progress -Value 1.0 -Message "Health check completed successfully!"
     
     $summary = "Health check completed successfully:`n"
-    $summary += "  • Servers checked: $($healthCheckResults.ExecutiveSummary.TotalServers)`n"
-    $summary += "  • Total checks: $($healthCheckResults.ExecutiveSummary.TotalChecks)`n"
-    $summary += "  • Health score: $healthScore%`n"
-    $summary += "  • Passed: $($healthCheckResults.ExecutiveSummary.PassedChecks)`n"
-    $summary += "  • Warnings: $($healthCheckResults.ExecutiveSummary.WarningChecks)`n"
-    $summary += "  • Failed: $($healthCheckResults.ExecutiveSummary.FailedChecks)"
+    $summary += "  * Servers checked: $($healthCheckResults.ExecutiveSummary.TotalServers)`n"
+    $summary += "  * Total checks: $($healthCheckResults.ExecutiveSummary.TotalChecks)`n"
+    $summary += "  * Health score: $healthScore%`n"
+    $summary += "  * Passed: $($healthCheckResults.ExecutiveSummary.PassedChecks)`n"
+    $summary += "  * Warnings: $($healthCheckResults.ExecutiveSummary.WarningChecks)`n"
+    $summary += "  * Failed: $($healthCheckResults.ExecutiveSummary.FailedChecks)"
     
     Send-Success -Description $summary
 } # End of main try block
