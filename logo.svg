@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#CC2927" rx="60"/>
+  
+  <!-- MSSQL Text -->
+  <text x="256" y="180" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="white" text-anchor="middle">MSSQL</text>
+  
+  <!-- Health Check Circle -->
+  <circle cx="256" cy="330" r="70" fill="#00A4EF"/>
+  
+  <!-- Checkmark -->
+  <path d="M 230 330 L 250 350 L 290 310" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Subtitle -->
+  <text x="256" y="450" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" opacity="0.9">Health Check</text>
+</svg>
