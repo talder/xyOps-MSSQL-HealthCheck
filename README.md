@@ -1,3 +1,6 @@
+<p align="center"><img src="https://raw.githubusercontent.com/talder/xyOps-MSSQL-HealthCheck/refs/heads/main/logo.png" height="108" alt="Logo"/></p>
+<h1 align="center">VMware VM Operations</h1>
+
 # xyOps MSSQL Health Check Plugin
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/xyOps-MSSQL-HealtCheck/releases)
