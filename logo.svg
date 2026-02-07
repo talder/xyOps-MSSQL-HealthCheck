@@ -12,5 +12,5 @@
   <path d="M 230 330 L 250 350 L 290 310" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   
   <!-- Subtitle -->
-  <text x="256" y="450" font-family="Arial, sans-serif" font-size="36" fill="white" text-anchor="middle" opacity="0.9">Health Check</text>
+  <text x="256" y="460" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle" opacity="0.9">Health Check</text>
 </svg>

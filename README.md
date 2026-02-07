@@ -1,9 +1,9 @@
 <p align="center"><img src="https://raw.githubusercontent.com/talder/xyOps-MSSQL-HealthCheck/refs/heads/main/logo.png" height="108" alt="Logo"/></p>
-<h1 align="center">VMware VM Operations</h1>
+<h1 align="center">MSSQL Health Check</h1>
 
 # xyOps MSSQL Health Check Plugin
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/xyOps-MSSQL-HealtCheck/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/talder/xyOps-MSSQL-HealtCheck/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![dbatools](https://img.shields.io/badge/dbatools-2.0+-green.svg)](https://dbatools.io)
