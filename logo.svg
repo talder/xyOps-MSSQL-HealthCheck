@@ -3,14 +3,14 @@
   <rect width="512" height="512" fill="#CC2927" rx="60"/>
   
   <!-- MSSQL Text -->
-  <text x="256" y="180" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="white" text-anchor="middle">MSSQL</text>
+  <text x="256" y="160" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="white" text-anchor="middle">MSSQL</text>
   
   <!-- Health Check Circle -->
-  <circle cx="256" cy="330" r="70" fill="#00A4EF"/>
+  <circle cx="256" cy="280" r="70" fill="#00A4EF"/>
   
   <!-- Checkmark -->
-  <path d="M 230 330 L 250 350 L 290 310" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M 230 280 L 250 300 L 290 260" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   
   <!-- Subtitle -->
-  <text x="256" y="460" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle" opacity="0.9">Health Check</text>
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="72" font-weight="600" fill="white" text-anchor="middle" opacity="0.95">Health Check</text>
 </svg>
