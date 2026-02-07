@@ -1,16 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Background -->
-  <rect width="512" height="512" fill="#CC2927" rx="60"/>
+  <!-- Gradient Background -->
+  <defs>
+    <linearGradient id="bg10" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8E2DE2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4A00E0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg10)" rx="80"/>
   
   <!-- MSSQL Text -->
-  <text x="256" y="160" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="white" text-anchor="middle">MSSQL</text>
+  <text x="256" y="120" font-family="Arial, sans-serif" font-size="86" font-weight="bold" fill="#FFFFFF" text-anchor="middle">MSSQL</text>
   
-  <!-- Health Check Circle -->
-  <circle cx="256" cy="280" r="70" fill="#00A4EF"/>
+  <!-- Hexagon Badge -->
+  <polygon points="256,170 340,215 340,305 256,350 172,305 172,215" fill="white" opacity="0.15" stroke="white" stroke-width="3"/>
+  <polygon points="256,190 320,225 320,295 256,330 192,295 192,225" fill="white" opacity="0.9"/>
   
-  <!-- Checkmark -->
-  <path d="M 230 280 L 250 300 L 290 260" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Database Stack Inside Hexagon -->
+  <ellipse cx="256" cy="245" rx="55" ry="18" fill="#8E2DE2"/>
+  <rect x="201" y="245" width="110" height="28" fill="#7020d0"/>
+  <ellipse cx="256" cy="273" rx="55" ry="18" fill="#8E2DE2"/>
+  <ellipse cx="256" cy="259" rx="55" ry="18" fill="#9D3EE8"/>
   
-  <!-- Subtitle -->
-  <text x="256" y="420" font-family="Arial, sans-serif" font-size="72" font-weight="600" fill="white" text-anchor="middle" opacity="0.95">Health Check</text>
+  <!-- Health Plus Badge -->
+  <circle cx="310" cy="210" r="28" fill="#00E676"/>
+  <rect x="305" y="195" width="10" height="30" fill="white" rx="2"/>
+  <rect x="295" y="205" width="30" height="10" fill="white" rx="2"/>
+  
+  <!-- Health Check Text -->
+  <text x="256" y="415" font-family="Arial, sans-serif" font-size="62" font-weight="800" fill="white" text-anchor="middle">Health Check</text>
+  <text x="256" y="460" font-family="Arial, sans-serif" font-size="30" font-weight="500" fill="white" text-anchor="middle" opacity="0.85">Enterprise Grade</text>
 </svg>
